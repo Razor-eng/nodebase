@@ -1,20 +1,36 @@
-import { getQueryClient, trpc } from "@/trpc/server";
-import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
-import { Client } from "./client";
-import { Suspense } from "react";
+"use client";
 
-const Home = async () => {
-  const queryClient = getQueryClient();
+import { Button } from "@/components/ui/button";
+import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
-  void queryClient.prefetchQuery(trpc.getUsers.queryOptions());
+const Home = () => {
+  const { data } = authClient.useSession();
+  const router = useRouter();
 
   return (
     <div className="h-screen w-screen flex items-center justify-center">
-      <HydrationBoundary state={dehydrate(queryClient)}>
-        <Suspense fallback={<p>loading...</p>}>
-          <Client />
-        </Suspense>
-      </HydrationBoundary>
+      {JSON.stringify(data)}
+
+      {data && (
+        <Button
+          onClick={() =>
+            authClient.signOut({
+              fetchOptions: {
+                onSuccess: () => {
+                  router.push("/login");
+                },
+                onError: (ctx) => {
+                  toast.error(ctx.error.message);
+                },
+              },
+            })
+          }
+        >
+          Logout
+        </Button>
+      )}
     </div>
   );
 };
